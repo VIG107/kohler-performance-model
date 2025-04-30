@@ -5,7 +5,7 @@ import math
 import plotly.graph_objects as go
 
 # --- Page Setup ---
-st.set_page_config(page_title="Water Systems Home", page_icon="💧", layout="centered")
+st.set_page_config(page_title="Kohler Performance Simulator", page_icon="💧", layout="centered")
 
 # --- Sidebar Navigation or Button Logic ---
 if 'page' not in st.session_state:
