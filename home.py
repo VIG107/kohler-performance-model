@@ -42,7 +42,7 @@ if st.session_state.page == 'home':
 
     with col1:
         if st.button("🚿 Shower Model"):
-            st.session_state.page = "shower"
+            st.session_state.page = "shower" 
             st.rerun()
 
     with col2:
@@ -62,102 +62,319 @@ if st.session_state.page == 'home':
 elif st.session_state.page == 'faucet':
     st.title("🚰 Faucet Modelling")
 
-    # Inputs
-    col1, col2 = st.columns(2)
-    with col1:
-        hot_temp = st.slider('Hot Water Temp (°C)', 0, 100, 60)
-        hot_pressure = st.slider('Hot Pressure (bar)', 0.0, 10.0, 1.5, 0.05)
-    with col2:
-        cold_temp = st.slider('Cold Water Temp (°C)', 0, 100, 20)
-        cold_pressure = st.slider('Cold Pressure (bar)', 0.0, 10.0, 2.95, 0.05)
+    model_choice = st.selectbox("Choose Cartridge Size:", ["26mm", "28mm", "35mm"], index=0)
 
-    col_lever, col_img = st.columns([2, 1])
-    with col_lever:
-        lever_angle = st.slider("Lever Angle (°)", -45, 45, 0)
-        if lever_angle < -30:
-            st.info("🔴 Mostly Hot")
-        elif lever_angle > 30:
-            st.info("🔵 Mostly Cold")
+    if model_choice == "26mm":
+        st.title("🚰 Faucet Modelling - 26mm")
+        # Inputs
+        col1, col2 = st.columns(2)
+        with col1:
+            hot_temp = st.slider('Hot Water Temp (°C)', 0, 100, 60)
+            hot_pressure = st.slider('Hot Pressure (bar)', 0.0, 10.0, 1.5, 0.05)
+        with col2:
+            cold_temp = st.slider('Cold Water Temp (°C)', 0, 100, 20)
+            cold_pressure = st.slider('Cold Pressure (bar)', 0.0, 10.0, 2.95, 0.05)
+
+        col_lever, col_img = st.columns([2, 1])
+        with col_lever:
+            lever_angle = st.slider("Lever Angle (°)", -45, 45, 0)
+            if lever_angle < -30:
+                st.info("🔴 Mostly Hot")
+            elif lever_angle > 30:
+                st.info("🔵 Mostly Cold")
+            else:
+                st.info("🟢 Mixed")
+
+        with col_img:
+            st.image("L.png", width=100, caption="Lever Reference")
+
+        # Calculations
+        rho = 980
+        A_max = 7e-3
+        C_d = 1.0
+        lever = (45 - lever_angle) / 90
+
+        A_hot = lever * A_max
+        A_cold = (1 - lever) * A_max
+        P_hot = hot_pressure * 1e5
+        P_cold = cold_pressure * 1e5
+        deltaP_hot = max(P_hot, 1e4)
+        deltaP_cold = max(P_cold, 1e4)
+
+        m_dot_hot = C_d * A_hot * np.sqrt(2 * rho * deltaP_hot)
+        m_dot_cold = C_d * A_cold * np.sqrt(2 * rho * deltaP_cold)
+        m_dot_total = m_dot_hot + m_dot_cold
+
+        if m_dot_total < 1e-6:
+            T_mixed = (hot_temp + cold_temp) / 2
+            flow_LPM = 0
         else:
-            st.info("🟢 Mixed")
+            T_mixed = (m_dot_hot * hot_temp + m_dot_cold * cold_temp) / m_dot_total
+            flow_LPM = (m_dot_total / rho) * 60
 
-    with col_img:
-        st.image("L.png", width=100, caption="Lever Reference")
+        col3, col4 = st.columns(2)
+        col3.metric("🌡️ Outlet Temp", f"{T_mixed:.1f} °C")
+        col4.metric("🚿 Flow Rate", f"{flow_LPM:.2f} LPM")
 
-    # Calculations
-    rho = 980
-    A_max = 7e-3
-    C_d = 1.0
-    lever = (45 - lever_angle) / 90
+        # Compact bar + graph
+        def get_temp_color(temp):
+            T = np.clip(temp, 0, 100)
+            if T <= 25:
+                return (0, T/25, 1)
+            elif T <= 50:
+                frac = (T-25) / 25
+                return (frac, 1, 1 - frac)
+            elif T <= 75:
+                frac = (T-50)/25
+                return (1, 1 - frac, 0)
+            else:
+                frac = (T-75)/25
+                return (1, 0, 0)
 
-    A_hot = lever * A_max
-    A_cold = (1 - lever) * A_max
-    P_hot = hot_pressure * 1e5
-    P_cold = cold_pressure * 1e5
-    deltaP_hot = max(P_hot, 1e4)
-    deltaP_cold = max(P_cold, 1e4)
+        angles = np.linspace(-45, 45, 50)
+        flows = []
+        for angle in angles:
+            lever_local = (45 - angle) / 90
+            A_hot_local = lever_local * A_max
+            A_cold_local = (1 - lever_local) * A_max
+            m_hot = C_d * A_hot_local * np.sqrt(2 * rho * deltaP_hot)
+            m_cold = C_d * A_cold_local * np.sqrt(2 * rho * deltaP_cold)
+            m_total = m_hot + m_cold
+            flows.append((m_total / rho) * 60)
 
-    m_dot_hot = C_d * A_hot * np.sqrt(2 * rho * deltaP_hot)
-    m_dot_cold = C_d * A_cold * np.sqrt(2 * rho * deltaP_cold)
-    m_dot_total = m_dot_hot + m_dot_cold
+        st.markdown("#### 📊 Visual Output")
+        col_plot1, col_plot2 = st.columns([1, 2])
 
-    if m_dot_total < 1e-6:
-        T_mixed = (hot_temp + cold_temp) / 2
-        flow_LPM = 0
-    else:
-        T_mixed = (m_dot_hot * hot_temp + m_dot_cold * cold_temp) / m_dot_total
-        flow_LPM = (m_dot_total / rho) * 60
+        with col_plot1:
+            fig, ax = plt.subplots(figsize=(1.1, 2))
+            ax.bar(1, T_mixed, width=0.3, color=get_temp_color(T_mixed))
+            ax.set_ylim(0, 100)
+            ax.set_xticks([]); ax.set_yticks([0, 50, 100])
+            ax.set_title('Temp', fontsize=7)
+            ax.set_ylabel('°C', fontsize=7)
+            ax.tick_params(labelsize=6)
+            st.pyplot(fig, use_container_width=False)
 
-    col3, col4 = st.columns(2)
-    col3.metric("🌡️ Outlet Temp", f"{T_mixed:.1f} °C")
-    col4.metric("🚿 Flow Rate", f"{flow_LPM:.2f} LPM")
+        with col_plot2:
+            fig2, ax2 = plt.subplots(figsize=(3, 1.8))
+            ax2.plot(angles, flows, 'b-o', linewidth=1.4, markersize=3)
+            ax2.set_xlabel('Angle (°)', fontsize=7)
+            ax2.set_ylabel('Flow (LPM)', fontsize=7)
+            ax2.set_title('Flow Curve', fontsize=8)
+            ax2.tick_params(labelsize=6)
+            ax2.set_xlim([-50, 50]); ax2.set_ylim([0, max(flows)*1.1])
+            ax2.grid(True, linewidth=0.4)
+            st.pyplot(fig2, use_container_width=False)
 
-    # Compact bar + graph
-    def get_temp_color(temp):
-        T = np.clip(temp, 0, 100)
-        if T <= 25:
-            return (0, T/25, 1)
-        elif T <= 50:
-            return (0, 1, 1 - (T - 25)/25)
-        elif T <= 75:
-            return ((T - 50)/25, 1 - 0.5*(T - 50)/25, 0)
+        st.markdown("---")
+
+    elif model_choice == "28mm":
+        st.title("🚰 Faucet Modelling - 28mm")
+        st.markdown("---")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            hot_temp = st.slider('🔥 Hot Water Temperature (°C)', 0, 100, 60)
+            hot_pressure = st.slider('🔥 Hot Water Pressure (bar)', 0.0, 10.0, 1.5, 0.05)
+        with col2:
+            cold_temp = st.slider('❄️ Cold Water Temperature (°C)', 0, 100, 20)
+            cold_pressure = st.slider('❄️ Cold Water Pressure (bar)', 0.0, 10.0, 2.95, 0.05)
+
+        st.markdown("### 🛠️ Lever Control")
+        col_lever, col_img = st.columns([2, 1])
+        with col_lever:
+            lever_angle = st.slider("Rotate Lever (°)", min_value=-45, max_value=45, value=0, step=1, format="%d°")
+            if lever_angle < -30:
+                st.info("🔴 Mostly Hot Water")
+            elif lever_angle > 30:
+                st.info("🔵 Mostly Cold Water")
+            else:
+                st.info("🟢 Mixed Water")
+        with col_img:
+            st.image("L.png", width=100, caption="Faucet for Lever Reference")
+
+        rho = 980
+        A_max = 8.5e-3
+        C_d = 1.0
+        lever = (45 - lever_angle) / 90
+
+        A_hot = lever * A_max
+        A_cold = (1 - lever) * A_max
+        P_hot = hot_pressure * 1e5
+        P_cold = cold_pressure * 1e5
+        deltaP_hot = max(P_hot, 1e4)
+        deltaP_cold = max(P_cold, 1e4)
+
+        m_dot_hot = C_d * A_hot * np.sqrt(2 * rho * deltaP_hot)
+        m_dot_cold = C_d * A_cold * np.sqrt(2 * rho * deltaP_cold)
+        m_dot_total = m_dot_hot + m_dot_cold
+
+        if m_dot_total < 1e-6:
+            T_mixed = (hot_temp + cold_temp) / 2
+            flow_LPM = 0
         else:
-            return (1, 0.5 - 0.5*(T - 75)/25, 0)
+            T_mixed = (m_dot_hot * hot_temp + m_dot_cold * cold_temp) / m_dot_total
+            flow_LPM = (m_dot_total / rho) * 60
 
-    angles = np.linspace(-45, 45, 50)
-    flows = []
-    for angle in angles:
-        lever_local = (45 - angle) / 90
-        A_hot_local = lever_local * A_max
-        A_cold_local = (1 - lever_local) * A_max
-        m_hot = C_d * A_hot_local * np.sqrt(2 * rho * deltaP_hot)
-        m_cold = C_d * A_cold_local * np.sqrt(2 * rho * deltaP_cold)
-        m_total = m_hot + m_cold
-        flows.append((m_total / rho) * 60)
+        st.markdown("---")
+        col3, col4 = st.columns(2)
+        col3.metric("🌡️ Outlet Temp", f"{T_mixed:.1f} °C")
+        col4.metric("🚿 Flow Rate", f"{flow_LPM:.2f} LPM")
 
-    st.markdown("#### 📊 Visual Output")
-    col_plot1, col_plot2 = st.columns([1, 2])
+        def get_temp_color(temp):
+            T = np.clip(temp, 0, 100)
+            if T <= 25:
+                return (0, T/25, 1)
+            elif T <= 50:
+                frac = (T-25) / 25
+                return (frac, 1, 1 - frac)
+            elif T <= 75:
+                frac = (T-50)/25
+                return (1, 1 - frac, 0)
+            else:
+                frac = (T-75)/25
+                return (1, 0, 0)
 
-    with col_plot1:
-        fig, ax = plt.subplots(figsize=(1.1, 2))
-        ax.bar(1, T_mixed, width=0.3, color=get_temp_color(T_mixed))
-        ax.set_ylim(0, 100)
-        ax.set_xticks([]); ax.set_yticks([0, 50, 100])
-        ax.set_title('Temp', fontsize=7)
-        ax.set_ylabel('°C', fontsize=7)
-        ax.tick_params(labelsize=6)
-        st.pyplot(fig, use_container_width=False)
+        angles = np.linspace(-45, 45, 50)
+        flows = []
+        for angle in angles:
+            lever_local = (45 - angle) / 90
+            A_hot_local = lever_local * A_max
+            A_cold_local = (1 - lever_local) * A_max
+            m_hot = C_d * A_hot_local * np.sqrt(2 * rho * deltaP_hot)
+            m_cold = C_d * A_cold_local * np.sqrt(2 * rho * deltaP_cold)
+            flows.append((m_hot + m_cold) / rho * 60)
 
-    with col_plot2:
-        fig2, ax2 = plt.subplots(figsize=(3, 1.8))
-        ax2.plot(angles, flows, 'b-o', linewidth=1.4, markersize=3)
-        ax2.set_xlabel('Angle (°)', fontsize=7)
-        ax2.set_ylabel('Flow (LPM)', fontsize=7)
-        ax2.set_title('Flow Curve', fontsize=8)
-        ax2.tick_params(labelsize=6)
-        ax2.set_xlim([-50, 50]); ax2.set_ylim([0, max(flows)*1.1])
-        ax2.grid(True, linewidth=0.4)
-        st.pyplot(fig2, use_container_width=False)
+        st.markdown("#### 📊 Visual Output")
+        col_plot1, col_plot2 = st.columns([1, 2])
+        with col_plot1:
+            fig, ax = plt.subplots(figsize=(1.1, 2))
+            ax.bar(1, T_mixed, width=0.3, color=get_temp_color(T_mixed))
+            ax.set_ylim(0, 100)
+            ax.set_xticks([]); ax.set_yticks([0, 50, 100])
+            ax.set_title('Temp', fontsize=7)
+            ax.set_ylabel('°C', fontsize=7)
+            ax.tick_params(labelsize=6)
+            st.pyplot(fig, use_container_width=False)
+
+        with col_plot2:
+            fig2, ax2 = plt.subplots(figsize=(3, 1.8))
+            ax2.plot(angles, flows, 'b-o', linewidth=1.4, markersize=3)
+            ax2.set_xlabel('Angle (°)', fontsize=7)
+            ax2.set_ylabel('Flow (LPM)', fontsize=7)
+            ax2.set_title('Flow Curve', fontsize=8)
+            ax2.tick_params(labelsize=6)
+            ax2.set_xlim([-50, 50])
+            ax2.set_ylim([0, max(flows)*1.1])
+            ax2.grid(True, linewidth=0.4)
+            st.pyplot(fig2, use_container_width=False)
+
+        st.markdown("---")
+        st.caption("Created by Vigyan Lal💧")
+
+    elif model_choice == "35mm":
+        st.title("🚰 Faucet Modelling - 35mm")
+        st.markdown("---")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            hot_temp = st.slider('🔥 Hot Water Temperature (°C)', 0, 100, 60)
+            hot_pressure = st.slider('🔥 Hot Water Pressure (bar)', 0.0, 10.0, 1.5, 0.05)
+        with col2:
+            cold_temp = st.slider('❄️ Cold Water Temperature (°C)', 0, 100, 20)
+            cold_pressure = st.slider('❄️ Cold Water Pressure (bar)', 0.0, 10.0, 2.95, 0.05)
+
+        st.markdown("### 🛠️ Lever Control")
+        col_lever, col_img = st.columns([2, 1])
+        with col_lever:
+            lever_angle = st.slider("Rotate Lever (°)", min_value=-45, max_value=45, value=0, step=1, format="%d°")
+            if lever_angle < -30:
+                st.info("🔴 Mostly Hot Water")
+            elif lever_angle > 30:
+                st.info("🔵 Mostly Cold Water")
+            else:
+                st.info("🟢 Mixed Water")
+        with col_img:
+            st.image("L.png", width=100, caption="Faucet for Lever Reference")
+
+        rho = 980
+        A_max = 15.75e-3
+        C_d = 1.0
+        lever = (45 - lever_angle) / 90
+
+        A_hot = lever * A_max
+        A_cold = (1 - lever) * A_max
+        P_hot = hot_pressure * 1e5
+        P_cold = cold_pressure * 1e5
+        deltaP_hot = max(P_hot, 1e4)
+        deltaP_cold = max(P_cold, 1e4)
+
+        m_dot_hot = C_d * A_hot * np.sqrt(2 * rho * deltaP_hot)
+        m_dot_cold = C_d * A_cold * np.sqrt(2 * rho * deltaP_cold)
+        m_dot_total = m_dot_hot + m_dot_cold
+
+        if m_dot_total < 1e-6:
+            T_mixed = (hot_temp + cold_temp) / 2
+            flow_LPM = 0
+        else:
+            T_mixed = (m_dot_hot * hot_temp + m_dot_cold * cold_temp) / m_dot_total
+            flow_LPM = (m_dot_total / rho) * 60
+
+        st.markdown("---")
+        col3, col4 = st.columns(2)
+        col3.metric("🌡️ Outlet Temp", f"{T_mixed:.1f} °C")
+        col4.metric("🚿 Flow Rate", f"{flow_LPM:.2f} LPM")
+
+        def get_temp_color(temp):
+            T = np.clip(temp, 0, 100)
+            if T <= 25:
+                return (0, T/25, 1)
+            elif T <= 50:
+                frac = (T-25) / 25
+                return (frac, 1, 1 - frac)
+            elif T <= 75:
+                frac = (T-50)/25
+                return (1, 1 - frac, 0)
+            else:
+                frac = (T-75)/25
+                return (1, 0, 0)
+
+        angles = np.linspace(-45, 45, 50)
+        flows = []
+        for angle in angles:
+            lever_local = (45 - angle) / 90
+            A_hot_local = lever_local * A_max
+            A_cold_local = (1 - lever_local) * A_max
+            m_hot = C_d * A_hot_local * np.sqrt(2 * rho * deltaP_hot)
+            m_cold = C_d * A_cold_local * np.sqrt(2 * rho * deltaP_cold)
+            flows.append((m_hot + m_cold) / rho * 60)
+
+        st.markdown("#### 📊 Visual Output")
+        col_plot1, col_plot2 = st.columns([1, 2])
+        with col_plot1:
+            fig, ax = plt.subplots(figsize=(1.1, 2))
+            ax.bar(1, T_mixed, width=0.3, color=get_temp_color(T_mixed))
+            ax.set_ylim(0, 100)
+            ax.set_xticks([]); ax.set_yticks([0, 50, 100])
+            ax.set_title('Temp', fontsize=7)
+            ax.set_ylabel('°C', fontsize=7)
+            ax.tick_params(labelsize=6)
+            st.pyplot(fig, use_container_width=False)
+
+        with col_plot2:
+            fig2, ax2 = plt.subplots(figsize=(3, 1.8))
+            ax2.plot(angles, flows, 'b-o', linewidth=1.4, markersize=3)
+            ax2.set_xlabel('Angle (°)', fontsize=7)
+            ax2.set_ylabel('Flow (LPM)', fontsize=7)
+            ax2.set_title('Flow Curve', fontsize=8)
+            ax2.tick_params(labelsize=6)
+            ax2.set_xlim([-50, 50])
+            ax2.set_ylim([0, max(flows)*1.1])
+            ax2.grid(True, linewidth=0.4)
+            st.pyplot(fig2, use_container_width=False)
+
+        st.markdown("---")
+        st.caption("Created by Vigyan Lal💧")
 
     if st.button("🔙 Back to Home"):
         st.session_state.page = 'home'
@@ -165,11 +382,15 @@ elif st.session_state.page == 'faucet':
 
 # === VALVE MODEL PAGE ===
 elif st.session_state.page == 'valve':
-    st.title("🔧 Diverter Valve Modelling")
+    st.title("🚰 Valve Model")
 
-    st.subheader("Inlet Conditions & Outlet Selection")
-    with st.container():
-        col1, col2, col3 = st.columns(3)
+    model_choice = st.selectbox("Choose Valve:", ["AT235", "AT360", "Thermostatic"], index=0)
+
+    if model_choice == "AT360":
+        st.title("🚰 AQUA TURBO 360")
+        st.subheader("Inlet Conditions & Outlet Selection")
+        with st.container():
+            col1, col2, col3 = st.columns(3)
         with col1:
             hotP = st.number_input('Hot Pressure (P1) (bar)', value=3.0, step=0.1, key="hotP_valve")
             hotT = st.number_input('Hot Temperature (T1) (°C)', value=60.0, step=1.0, key="hotT_valve")
@@ -181,15 +402,15 @@ elif st.session_state.page == 'valve':
             pipeLen = st.number_input('Pipe Length (m)', value=1.0, step=0.1, key="pipeLen_valve")
             pipeDia = st.number_input('Pipe Diameter (mm)', value=18.4, step=0.1, key="pipeDia_valve")
 
-    st.subheader("Lever Control")
+        st.subheader("Lever Control")
 
-    col_slider, col_gauge, col_image = st.columns([1, 1, 1])
+        col_slider, col_gauge, col_image = st.columns([1, 1, 1])
 
-    with col_slider:
-        theta = st.slider("Lever Angle (°)", min_value=-45, max_value=45, value=0, step=1, key="theta_valve")
+        with col_slider:
+            theta = st.slider("Lever Angle (°)", min_value=-45, max_value=45, value=0, step=1, key="theta_valve")
 
-    with col_gauge:
-        fig = go.Figure(go.Indicator(
+        with col_gauge:
+            fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=theta,
             title={'text': "Lever Angle", 'font': {'size': 16}},
@@ -210,91 +431,93 @@ elif st.session_state.page == 'valve':
         fig.update_layout(height=220, width=220, margin=dict(l=10, r=10, t=30, b=10))
         st.plotly_chart(fig)
 
-    with col_image:
-        st.image('882IN.png', width=150, caption="Valve Image (Small)")
+        with col_image:
+            st.image('AT360.png', width=150, caption="Valve Image (Small)")
 
     # Calculation inside Valve
-    def calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia):
-        rho = 1000
-        g = 9.81
-        D_throat = 0.007
-        D_outlet = 0.0127
-        A_throat = math.pi * (D_throat/2)**2
-        A_outlet = math.pi * (D_outlet/2)**2
+        def calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia):
+            rho = 1000
+            g = 9.81
+            D_throat = 0.007
+            D_outlet = 0.0127
+            A_throat = math.pi * (D_throat/2)**2
+            A_outlet = math.pi * (D_outlet/2)**2
 
-        lever = (theta + 45) / 90
-        P_hot = hotP * 1e5
-        P_cold = coldP * 1e5
-        L_pipe = pipeLen
-        D_pipe = pipeDia / 1000
+            lever = (theta + 45) / 90
+            P_hot = hotP * 1e5
+            P_cold = coldP * 1e5
+            L_pipe = pipeLen
+            D_pipe = pipeDia / 1000
 
-        A_hot = (1 - lever) * A_throat
-        A_cold = lever * A_throat
-        K_inlet = 0.17
-        K_cart = 0.67
-        K_out = 0.2
+            A_hot = (1 - lever) * A_throat
+            A_cold = lever * A_throat
+            K_inlet = 0.17
+            K_cart = 0.67
+            K_out = 0.2
 
-        Q_hot = A_hot * math.sqrt((2 * P_hot) / (rho * (K_inlet + K_cart)))
-        Q_cold = A_cold * math.sqrt((2 * P_cold) / (rho * (K_inlet + K_cart)))
-        Q_total = Q_hot + Q_cold
+            Q_hot = A_hot * math.sqrt((2 * P_hot) / (rho * (K_inlet + K_cart)))
+            Q_cold = A_cold * math.sqrt((2 * P_cold) / (rho * (K_inlet + K_cart)))
+            Q_total = Q_hot + Q_cold
 
-        P_mix = (Q_hot * P_hot + Q_cold * P_cold) / max(Q_total, 1e-6)
-        T_mix = (Q_hot * hotT + Q_cold * coldT) / max(Q_total, 1e-6)
+            P_mix = (Q_hot * P_hot + Q_cold * P_cold) / max(Q_total, 1e-6)
+            T_mix = (Q_hot * hotT + Q_cold * coldT) / max(Q_total, 1e-6)
 
-        if outletChoice == 'Shower':
-            K_total = K_cart + K_out
-        else:
-            K_total = K_cart + K_out
+            if outletChoice == 'Shower':
+                K_total = K_cart + K_out
+            else:
+                K_total = K_cart + K_out
 
-        Q_out = A_throat * math.sqrt((2 * P_mix) / (rho * K_total))
+            Q_out = A_throat * math.sqrt((2 * P_mix) / (rho * K_total))
 
-        v_out = Q_out / A_outlet
-        DeltaP = 0.5 * rho * v_out**2
-        P_out = P_mix - DeltaP
+            v_out = Q_out / A_outlet
+            DeltaP = 0.5 * rho * v_out**2
+            P_out = P_mix - DeltaP
 
-        A_pipe = math.pi * (D_pipe/2)**2
-        v_pipe = Q_out / A_pipe
-        f = 0.009
-        DeltaP_pipe = f * (L_pipe / D_pipe) * 0.5 * rho * v_pipe**2
+            A_pipe = math.pi * (D_pipe/2)**2
+            v_pipe = Q_out / A_pipe
+            f = 0.009
+            DeltaP_pipe = f * (L_pipe / D_pipe) * 0.5 * rho * v_pipe**2
 
-        if outletChoice == 'Shower':
-            DeltaP_pipe += rho * g * L_pipe
-        else:
-            DeltaP_pipe *= 0.05
+            if outletChoice == 'Shower':
+                DeltaP_pipe += rho * g * L_pipe
+            else:
+                DeltaP_pipe *= 0.05
 
-        P_pipe_out = max(P_out - DeltaP_pipe, 0)
-        T_pipe_out = T_mix - 0.2 * L_pipe
+            P_pipe_out = max(P_out - DeltaP_pipe, 0)
+            T_pipe_out = T_mix - 0.2 * L_pipe
 
-        results = {
-            "Valve Outlet Flow (LPM)": Q_out * 1000 * 60,
-            "Valve Outlet Pressure (bar)": P_out / 1e5,
-            "Mixed Water Temperature (°C)": T_mix,
-            "Final Pipe Flow (LPM)": Q_out * 1000 * 60,
-            "Final Pipe Pressure (bar)": P_pipe_out / 1e5,
-            "Final Pipe Temperature (°C)": T_pipe_out
-        }
-        return results
+            results = {
+                "Valve Outlet Flow (LPM)": Q_out * 1000 * 60,
+                "Valve Outlet Pressure (bar)": P_out / 1e5,
+                "Mixed Water Temperature (°C)": T_mix,
+                "Final Pipe Flow (LPM)": Q_out * 1000 * 60,
+                "Final Pipe Pressure (bar)": P_pipe_out / 1e5,
+                "Final Pipe Temperature (°C)": T_pipe_out
+            }
+            return results
 
-    results = calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia)
+        results = calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia)
 
-    st.subheader("Results")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Valve Outlet Flow (LPM)", f"{results['Valve Outlet Flow (LPM)']:.2f}")
-        st.metric("Final Pipe Flow (LPM)", f"{results['Final Pipe Flow (LPM)']:.2f}")
-    with col2:
-        st.metric("Valve Outlet Pressure (bar)", f"{results['Valve Outlet Pressure (bar)']:.2f}")
-        st.metric("Final Pipe Pressure (bar)", f"{results['Final Pipe Pressure (bar)']:.2f}")
-    with col3:
-        st.metric("Mixed Water Temperature (°C)", f"{results['Mixed Water Temperature (°C)']:.1f}")
-        st.metric("Final Pipe Temperature (°C)", f"{results['Final Pipe Temperature (°C)']:.1f}")
+        st.subheader("Results")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Valve Outlet Flow (LPM)", f"{results['Valve Outlet Flow (LPM)']:.2f}")
+            st.metric("Final Pipe Flow (LPM)", f"{results['Final Pipe Flow (LPM)']:.2f}")
+        with col2:
+            st.metric("Valve Outlet Pressure (bar)", f"{results['Valve Outlet Pressure (bar)']:.2f}")
+            st.metric("Final Pipe Pressure (bar)", f"{results['Final Pipe Pressure (bar)']:.2f}")
+        with col3:
+            st.metric("Mixed Water Temperature (°C)", f"{results['Mixed Water Temperature (°C)']:.1f}")
+            st.metric("Final Pipe Temperature (°C)", f"{results['Final Pipe Temperature (°C)']:.1f}")
+
+    else:
+        st.info("Under Development")
 
     if st.button("🔙 Back to Home"):
         st.session_state.page = 'home'
         st.rerun()
 
-# === SHOWER MODEL PAGE ===
-# === SHOWER MODEL PAGE ===
 elif st.session_state.page == 'shower':
     st.title("🚿 Shower Performance Model")
     st.markdown("---")
