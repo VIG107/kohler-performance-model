@@ -46,7 +46,7 @@ if st.session_state.page == 'home':
             st.rerun()
 
     with col2:
-        if st.button("🔧 Valve Model"):
+        if st.button("💦 Valve Model"):
             st.session_state.page = "valve"
             st.rerun()
 
