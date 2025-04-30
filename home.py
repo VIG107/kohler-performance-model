@@ -3,9 +3,110 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import plotly.graph_objects as go
+import streamlit as st
+import time
+import base64
 
-# --- Page Setup ---
-st.set_page_config(page_title="Kohler Performance Simulator", page_icon="💧", layout="centered")
+# ✅ SET PAGE FIRST
+st.set_page_config(page_title="Kohler Performance", page_icon="💧", layout="centered")
+
+# Load assets
+def load_base64(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+gif_b64 = load_base64("kohler_loading.gif")
+mp3_b64 = load_base64("netflix_intro.mp3")
+
+# Session state
+if "start" not in st.session_state:
+    st.session_state.start = False
+
+if not st.session_state.start:
+    st.markdown("""
+        <style>
+        .center-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .stButton > button {
+            background-color: #0078D4;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 0.8em 2.5em;
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .stButton > button:hover {
+            background-color: #005fa3;
+            transform: scale(1.05);
+        }
+        </style>
+
+        <div class="center-container">
+    """, unsafe_allow_html=True)
+
+    if st.button("Click to Start"):
+        st.session_state.start = True
+        st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.stop()
+
+    
+# Splash + Sound
+st.markdown(f"""
+    <style>
+    #splash {{
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: black;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        animation: fadeOut 1s ease-out 3.2s forwards;
+    }}
+    #splash-logo {{
+        width: 300px;
+        animation: grow 3s ease-in-out forwards;
+    }}
+    #splash-text {{
+        color: white;
+        margin-top: 20px;
+        font-size: 20px;
+    }}
+    @keyframes grow {{
+        0% {{ transform: scale(1.0); opacity: 0; }}
+        50% {{ transform: scale(1.3); opacity: 0.8; }}
+        100% {{ transform: scale(1.6); opacity: 1; }}
+    }}
+    @keyframes fadeOut {{
+        to {{ opacity: 0; visibility: hidden; }}
+    }}
+    </style>
+
+    <div id="splash">
+        <img id="splash-logo" src="data:image/gif;base64,{gif_b64}">
+        <div id="splash-text">Performance Model</div>
+        <audio id="intro-audio" autoplay>
+            <source src="data:audio/mp3;base64,{mp3_b64}" type="audio/mp3">
+        </audio>
+    </div>
+""", unsafe_allow_html=True)
+
+# Wait and continue
+time.sleep(3.5)
 
 # --- Sidebar Navigation or Button Logic ---
 if 'page' not in st.session_state:
@@ -46,7 +147,7 @@ if st.session_state.page == 'home':
             st.rerun()
 
     with col2:
-        if st.button("💦 Valve Model"):
+        if st.button("🔧 Valve Model"):
             st.session_state.page = "valve"
             st.rerun()
 
@@ -501,7 +602,8 @@ elif st.session_state.page == 'valve':
             }
             return results
 
-        results = calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia)
+        with st.spinner("🔄 Calculating output... Please wait"):
+            results = calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia)
 
         st.subheader("Results")
         col1, col2, col3 = st.columns(3)
