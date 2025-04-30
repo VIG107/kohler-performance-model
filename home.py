@@ -10,18 +10,18 @@ import base64
 # ✅ SET PAGE FIRST
 st.set_page_config(page_title="Kohler Performance", page_icon="💧", layout="centered")
 
-# Session state for splash
-if "start" not in st.session_state:
-    st.session_state.start = False
-
-# Load splash gif as base64
+# Load assets
 def load_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
 gif_b64 = load_base64("kohler_loading.gif")
+mp3_b64 = load_base64("netflix_intro.mp3")
 
-# First: Centered Start Button
+# Session state
+if "start" not in st.session_state:
+    st.session_state.start = False
+
 if not st.session_state.start:
     st.markdown("""
         <style>
@@ -32,22 +32,25 @@ if not st.session_state.start:
             transform: translate(-50%, -50%);
             z-index: 9999;
         }
+
         .stButton > button {
             background-color: #0078D4;
             color: white;
             font-size: 18px;
             font-weight: bold;
-            padding: 0.9em 2.5em;
+            padding: 0.8em 2.5em;
             border-radius: 10px;
             border: none;
             box-shadow: 0 4px 12px rgba(0, 120, 212, 0.25);
             transition: all 0.3s ease;
         }
+
         .stButton > button:hover {
             background-color: #005fa3;
             transform: scale(1.05);
         }
         </style>
+
         <div class="center-container">
     """, unsafe_allow_html=True)
 
@@ -58,7 +61,8 @@ if not st.session_state.start:
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-# Splash Logo Only (no sound)
+    
+# Splash + Sound
 st.markdown(f"""
     <style>
     #splash {{
@@ -95,10 +99,13 @@ st.markdown(f"""
     <div id="splash">
         <img id="splash-logo" src="data:image/gif;base64,{gif_b64}">
         <div id="splash-text">Performance Model</div>
+        <audio id="intro-audio" autoplay>
+            <source src="data:audio/mp3;base64,{mp3_b64}" type="audio/mp3">
+        </audio>
     </div>
 """, unsafe_allow_html=True)
 
-# Wait for splash animation
+# Wait and continue
 time.sleep(3.5)
 
 # --- Sidebar Navigation or Button Logic ---
