@@ -404,35 +404,40 @@ elif st.session_state.page == 'valve':
 
         st.subheader("Lever Control")
 
-        col_slider, col_gauge, col_image = st.columns([1, 1, 1])
+        col_slider, col_gauge, col_image = st.columns([1.2, 1, 1])
 
         with col_slider:
-            theta = st.slider("Lever Angle (°)", min_value=-45, max_value=45, value=0, step=1, key="theta_valve")
+            st.markdown("##### Lever Angle (°)")
+            st.markdown("<div style='padding-top: 35px;'>", unsafe_allow_html=True)
+            theta = st.slider("", min_value=-45, max_value=45, value=0, step=1, key="theta_valve_slider")
+            st.markdown("</div>", unsafe_allow_html=True)
 
         with col_gauge:
             fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=theta,
-            title={'text': "Lever Angle", 'font': {'size': 16}},
-            gauge={
-                'axis': {'range': [-45, 45]},
-                'bar': {'color': "darkblue"},
-                'steps': [
-                    {'range': [-45, 0], 'color': "lightblue"},
-                    {'range': [0, 45], 'color': "lightgreen"}
-                ],
-                'threshold': {
-                    'line': {'color': "red", 'width': 2},
-                    'thickness': 0.75,
-                    'value': theta
+                mode="gauge+number",
+                value=theta,
+                title={'text': ""},
+                gauge={
+                    'axis': {'range': [-45, 45]},
+                    'bar': {'color': "darkblue"},
+                    'steps': [
+                        {'range': [-45, 0], 'color': "indianred"},
+                        {'range': [0, 45], 'color': "lightblue"}
+                    ],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 2},
+                        'thickness': 0.75,
+                        'value': theta
+                    }
                 }
-            }
-        ))
-        fig.update_layout(height=220, width=220, margin=dict(l=10, r=10, t=30, b=10))
-        st.plotly_chart(fig)
+            ))
+            fig.update_layout(height=200, width=200, margin=dict(l=0, r=0, t=0, b=0))
+            st.plotly_chart(fig, use_container_width=False)
 
         with col_image:
-            st.image('AT360.png', width=150, caption="Valve Image (Small)")
+            st.markdown("<div style='text-align:center; padding-top: 35px;'>", unsafe_allow_html=True)
+            st.image("AT360.png", width=130, caption="Valve Image")
+            st.markdown("</div>", unsafe_allow_html=True)
 
     # Calculation inside Valve
         def calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia):
