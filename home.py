@@ -139,7 +139,7 @@ if st.session_state.page == 'home':
     st.markdown("---")
     st.write("### Select a Model to Continue:")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         if st.button("🚿 Shower Model"):
@@ -155,6 +155,11 @@ if st.session_state.page == 'home':
         if st.button("🚰 Faucet Model"):
             st.session_state.page = "faucet"
             st.rerun()
+
+    with col4:
+        if st.button("📉PRV Placement"):
+            st.session_state.page = "prv"
+            st.rerun()        
 
     st.markdown("---")
     st.caption("Made by Vigyan Lal")
@@ -618,6 +623,137 @@ elif st.session_state.page == 'valve':
             st.metric("Mixed Water Temperature (°C)", f"{results['Mixed Water Temperature (°C)']:.1f}")
             st.metric("Final Pipe Temperature (°C)", f"{results['Final Pipe Temperature (°C)']:.1f}")
 
+    elif model_choice == "AT235":
+        st.title("🚰 AQUA TURBO 235")
+        st.subheader("Inlet Conditions & Outlet Selection")
+        with st.container():
+            col1, col2, col3 = st.columns(3)
+        with col1:
+            hotP = st.number_input('Hot Pressure (P1) (bar)', value=3.0, step=0.1, key="hotP_valve")
+            hotT = st.number_input('Hot Temperature (T1) (°C)', value=60.0, step=1.0, key="hotT_valve")
+        with col2:
+            coldP = st.number_input('Cold Pressure (P2) (bar)', value=3.0, step=0.1, key="coldP_valve")
+            coldT = st.number_input('Cold Temperature (T2) (°C)', value=25.0, step=1.0, key="coldT_valve")
+        with col3:
+            outletChoice = st.selectbox('Check Flow To:', ['Spout', 'Shower'], key="outletChoice_valve")
+            pipeLen = st.number_input('Pipe Length (m)', value=1.0, step=0.1, key="pipeLen_valve")
+            pipeDia = st.number_input('Pipe Diameter (mm)', value=18.4, step=0.1, key="pipeDia_valve")
+
+        st.subheader("Lever Control")
+
+        col_slider, col_gauge, col_image = st.columns([1.2, 1, 1])
+
+        with col_slider:
+            st.markdown("##### Lever Angle (°)")
+            st.markdown("<div style='padding-top: 35px;'>", unsafe_allow_html=True)
+            theta = st.slider("", min_value=-45, max_value=45, value=0, step=1, key="theta_valve_slider")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with col_gauge:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=theta,
+                title={'text': ""},
+                gauge={
+                    'axis': {'range': [-45, 45]},
+                    'bar': {'color': "darkblue"},
+                    'steps': [
+                        {'range': [-45, 0], 'color': "indianred"},
+                        {'range': [0, 45], 'color': "lightblue"}
+                    ],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 2},
+                        'thickness': 0.75,
+                        'value': theta
+                    }
+                }
+            ))
+            fig.update_layout(height=200, width=200, margin=dict(l=0, r=0, t=0, b=0))
+            st.plotly_chart(fig, use_container_width=False)
+
+        with col_image:
+            st.markdown("<div style='text-align:center; padding-top: 35px;'>", unsafe_allow_html=True)
+            st.image("882IN.png", width=130, caption="Valve Image")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # Calculation inside Valve
+        def calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia):
+            rho = 1000
+            g = 9.81
+            D_throat = 0.0051
+            D_outlet = 0.0127
+            A_throat = math.pi * (D_throat/2)**2
+            A_outlet = math.pi * (D_outlet/2)**2
+
+            lever = (theta + 45) / 90
+            P_hot = hotP * 1e5
+            P_cold = coldP * 1e5
+            L_pipe = pipeLen
+            D_pipe = pipeDia / 1000
+
+            A_hot = (1 - lever) * A_throat
+            A_cold = lever * A_throat
+            K_inlet = 0.17
+            K_cart = 0.65
+            K_out = 0.2
+
+            Q_hot = A_hot * math.sqrt((2 * P_hot) / (rho * (K_inlet + K_cart)))
+            Q_cold = A_cold * math.sqrt((2 * P_cold) / (rho * (K_inlet + K_cart)))
+            Q_total = Q_hot + Q_cold
+
+            P_mix = (Q_hot * P_hot + Q_cold * P_cold) / max(Q_total, 1e-6)
+            T_mix = (Q_hot * hotT + Q_cold * coldT) / max(Q_total, 1e-6)
+
+            if outletChoice == 'Shower':
+                K_total = K_cart + K_out
+            else:
+                K_total = K_cart + K_out
+
+            Q_out = A_throat * math.sqrt((2 * P_mix) / (rho * K_total))
+
+            v_out = Q_out / A_outlet
+            DeltaP = 0.5 * rho * v_out**2
+            P_out = P_mix - DeltaP
+
+            A_pipe = math.pi * (D_pipe/2)**2
+            v_pipe = Q_out / A_pipe
+            f = 0.009
+            DeltaP_pipe = f * (L_pipe / D_pipe) * 0.5 * rho * v_pipe**2
+
+            if outletChoice == 'Shower':
+                DeltaP_pipe += rho * g * L_pipe
+            else:
+                DeltaP_pipe *= 0.05
+
+            P_pipe_out = max(P_out - DeltaP_pipe, 0)
+            T_pipe_out = T_mix - 0.2 * L_pipe
+
+            results = {
+                "Valve Outlet Flow (LPM)": Q_out * 1000 * 60,
+                "Valve Outlet Pressure (bar)": P_out / 1e5,
+                "Mixed Water Temperature (°C)": T_mix,
+                "Final Pipe Flow (LPM)": Q_out * 1000 * 60,
+                "Final Pipe Pressure (bar)": P_pipe_out / 1e5,
+                "Final Pipe Temperature (°C)": T_pipe_out
+            }
+            return results
+
+        with st.spinner("🔄 Calculating output... Please wait"):
+            results = calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia)
+
+        st.subheader("Results")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Valve Outlet Flow (LPM)", f"{results['Valve Outlet Flow (LPM)']:.2f}")
+            st.metric("Final Pipe Flow (LPM)", f"{results['Final Pipe Flow (LPM)']:.2f}")
+        with col2:
+            st.metric("Valve Outlet Pressure (bar)", f"{results['Valve Outlet Pressure (bar)']:.2f}")
+            st.metric("Final Pipe Pressure (bar)", f"{results['Final Pipe Pressure (bar)']:.2f}")
+        with col3:
+            st.metric("Mixed Water Temperature (°C)", f"{results['Mixed Water Temperature (°C)']:.1f}")
+            st.metric("Final Pipe Temperature (°C)", f"{results['Final Pipe Temperature (°C)']:.1f}")
+
     else:
         st.info("Under Development")
 
@@ -675,6 +811,50 @@ elif st.session_state.page == 'shower':
         T_final = T_w - deltaT_total
 
         st.success(f"🌡️ Final Outlet Temperature: **{T_final:.2f} °C**")
+
+    if st.button("🔙 Back to Home"):
+        st.session_state.page = 'home'
+        st.rerun()
+
+elif st.session_state.page == 'prv':
+    st.title("🔧 PRV Placement Calculator")
+
+    with st.form("prv_form"):
+        st.subheader("Enter Pipeline Parameters")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            total_length = st.number_input("Total Pipeline Length (m)", min_value=0.0, value=0.0, step=0.1)
+            target_pressure_bar = st.number_input("Target Outlet Pressure (bar)", min_value=0.0, value=0.0, step=0.1)
+
+        with col2:
+            elevation_drop = st.number_input("Total Elevation Drop (m)", min_value=0.0, value=0.0, step=0.1)
+            pipe_dia_mm = st.number_input("Pipe Inner Diameter (mm)", min_value=0.0, value=0.0, step=0.1)
+
+        # Submit + Reset inside form
+        submitted = st.form_submit_button("Calculate PRV Location")
+        reset = st.form_submit_button("Reset")
+
+    if submitted:
+        if total_length == 0 or elevation_drop == 0 or target_pressure_bar == 0:
+            st.error("Please fill all fields with non-zero values.")
+        else:
+            rho = 1000  # kg/m³
+            g = 9.81    # m/s²
+            pipe_dia_m = pipe_dia_mm / 1000  # in meters
+            P_target_Pa = target_pressure_bar * 1e5  # in Pascal
+
+            required_height = P_target_Pa / (rho * g)
+            elevation_fraction = required_height / elevation_drop
+            L2 = elevation_fraction * total_length
+            L1 = total_length - L2
+
+            st.success(f"""✅ To ensure outlet pressure = **{target_pressure_bar:.2f} bar**:
+- Place the PRV **{L1:.2f} meters** from the inlet  
+- (i.e., **{L2:.2f} meters** from the outlet)""")
+
+    elif reset:
+        st.experimental_rerun()
 
     if st.button("🔙 Back to Home"):
         st.session_state.page = 'home'
