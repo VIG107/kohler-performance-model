@@ -831,9 +831,12 @@ elif st.session_state.page == 'prv':
             elevation_drop = st.number_input("Total Elevation Drop (m)", min_value=0.0, value=0.0, step=0.1)
             pipe_dia_mm = st.number_input("Pipe Inner Diameter (mm)", min_value=0.0, value=0.0, step=0.1)
 
-        # Submit + Reset inside form
-        submitted = st.form_submit_button("Calculate PRV Location")
-        reset = st.form_submit_button("Reset")
+        # Buttons inside form
+        col_calc, col_reset = st.columns([1, 1])
+        with col_calc:
+            submitted = st.form_submit_button("Calculate PRV Location")
+        with col_reset:
+            reset = st.form_submit_button("Reset")
 
     if submitted:
         if total_length == 0 or elevation_drop == 0 or target_pressure_bar == 0:
@@ -856,6 +859,7 @@ elif st.session_state.page == 'prv':
     elif reset:
         st.experimental_rerun()
 
+    st.markdown("---")
     if st.button("🔙 Back to Home"):
         st.session_state.page = 'home'
         st.rerun()
