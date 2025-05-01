@@ -630,11 +630,11 @@ elif st.session_state.page == 'shower':
     st.markdown("---")
 
     st.subheader("Enter Parameters:")
-    temp = st.number_input("Water Temperature (°C)", value=40.0, format="%.1f")
-    pressure = st.number_input("Water Pressure (bar)", value=3.0, format="%.1f")
-    nozzle_dia = st.number_input("Nozzle Diameter (mm)", value=1.2, format="%.2f")
+    temp = st.number_input("Water Temperature (°C)", value=40.0, step=1.0, format="%.1f")
+    pressure = st.number_input("Water Pressure (bar)", value=3.0, step=0.1, format="%.1f")
+    nozzle_dia = st.number_input("Nozzle Diameter (mm)", value=1.2, step=0.1, format="%.2f")
     num_nozzles = st.number_input("Number of Nozzles", value=50, step=1)
-    air_temp = st.number_input("Ambient Air Temperature (°C)", value=25.0, format="%.1f")
+    air_temp = st.number_input("Ambient Air Temperature (°C)", value=25.0, step=0.1, format="%.1f")
 
     if st.button("💧 Calculate Final Outlet Temperature"):
         rho = 997
