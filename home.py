@@ -164,6 +164,21 @@ if st.session_state.page == 'home':
     st.markdown("---")
     st.caption("Made by Vigyan Lal")
 
+    st.markdown(f"""
+    <style>
+    .bottom-right-logo {{
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 1000;
+        opacity: 0.9;
+    }}
+    </style>
+    <div class="bottom-right-logo">
+        <img src="app/static/logo.png" width="90">
+    </div>
+""", unsafe_allow_html=True)
+
 # === FAUCET MODEL PAGE ===
 elif st.session_state.page == 'faucet':
     st.title("🚰 Faucet Modelling")
@@ -171,7 +186,7 @@ elif st.session_state.page == 'faucet':
     model_choice = st.selectbox("Choose Cartridge Size:", ["26mm", "28mm", "35mm"], index=0)
 
     if model_choice == "26mm":
-        st.title("🚰 Faucet Modelling - 26mm")
+        st.title("🚰 26mm")
         # Inputs
         col1, col2 = st.columns(2)
         with col1:
@@ -222,7 +237,32 @@ elif st.session_state.page == 'faucet':
         col3.metric("🌡️ Outlet Temp", f"{T_mixed:.1f} °C")
         col4.metric("🚿 Flow Rate", f"{flow_LPM:.2f} LPM")
 
-        # Compact bar + graph
+        # Aerator Selection Section
+        st.markdown("### 💦 Select Aerator Type")
+
+# Aerator specs (mid-range flow at 3 bar)
+        aerator_specs = {
+        "Aerated - Light Green (Z) - 7.5-9 LPM": {"flow": 8.25, "wetted_area": 4806},  # Mid of 7.5 and 9
+        "Aerated - Light Blue (A) - 13.5-15 LPM": {"flow": 14.25, "wetted_area": 4716},  # Mid of 13.5 and 15
+        "Aerated - Light Grey (B) - 22.8-25.2 LPM": {"flow": 24, "wetted_area": 4840},
+        "Aerated - Dark Grey (C) - 27-30 LPM": {"flow": 28.5, "wetted_area": 4823},
+        "Aerated - Blue (V) - 22.8-25.2 LPM": {"wetted_area": 4033},
+        "Aerated - Orange - 5 LPM": {"flow": 5, "wetted_area": 4596},
+        "Aerated - White - 8 LPM": {"flow": 8, "wetted_area": 4596},
+}
+        aerator_choice = st.selectbox("Choose Aerator Type", list(aerator_specs.keys()))
+        aerator_flow_rate = aerator_specs[aerator_choice]["flow"]
+        wetted_area = aerator_specs[aerator_choice]["wetted_area"]
+
+# Logic to compare calculated flow vs aerator rated flow
+        st.markdown("#### ✅ With respect to Aerator:")
+
+        if flow_LPM <= aerator_flow_rate:
+                st.success(f"Flow will be **{flow_LPM:.2f} LPM** (within aerator limit of {aerator_flow_rate} LPM), with wetted area less than ~4806mm2")
+        else:
+                st.warning(f"⚠️ Aerator will restrict flow to **{aerator_flow_rate} LPM** (your calculated flow is {flow_LPM:.2f} LPM), with wetted area ~4806mm2 ")
+
+            # Compact bar + graph
         def get_temp_color(temp):
             T = np.clip(temp, 0, 100)
             if T <= 25:
@@ -275,7 +315,7 @@ elif st.session_state.page == 'faucet':
         st.markdown("---")
 
     elif model_choice == "28mm":
-        st.title("🚰 Faucet Modelling - 28mm")
+        st.title("🚰 28mm")
         st.markdown("---")
 
         col1, col2 = st.columns(2)
@@ -326,6 +366,30 @@ elif st.session_state.page == 'faucet':
         col3, col4 = st.columns(2)
         col3.metric("🌡️ Outlet Temp", f"{T_mixed:.1f} °C")
         col4.metric("🚿 Flow Rate", f"{flow_LPM:.2f} LPM")
+
+        st.markdown("### 💦 Select Aerator Type")
+
+# Aerator specs (mid-range flow at 3 bar)
+        aerator_specs = {
+        "Aerated - Light Green (Z) - 7.5-9 LPM": {"flow": 8.25, "wetted_area": 4806},  # Mid of 7.5 and 9
+        "Aerated - Light Blue (A) - 13.5-15 LPM": {"flow": 14.25, "wetted_area": 4716},  # Mid of 13.5 and 15
+        "Aerated - Light Grey (B) - 22.8-25.2 LPM": {"flow": 24, "wetted_area": 4840},
+        "Aerated - Dark Grey (C) - 27-30 LPM": {"flow": 28.5, "wetted_area": 4823},
+        "Aerated - Blue (V) - 22.8-25.2 LPM": {"wetted_area": 4033},
+        "Aerated - Orange - 5 LPM": {"flow": 5, "wetted_area": 4596},
+        "Aerated - White - 8 LPM": {"flow": 8, "wetted_area": 4596},
+}
+        aerator_choice = st.selectbox("Choose Aerator Type", list(aerator_specs.keys()))
+        aerator_flow_rate = aerator_specs[aerator_choice]["flow"]
+        wetted_area = aerator_specs[aerator_choice]["wetted_area"]
+
+# Logic to compare calculated flow vs aerator rated flow
+        st.markdown("#### ✅ With respect to Aerator:")
+
+        if flow_LPM <= aerator_flow_rate:
+            st.success(f"Flow will be **{flow_LPM:.2f} LPM** (within aerator limit of {aerator_flow_rate} LPM), with wetted area less than ~4806mm2")
+        else:
+            st.warning(f"⚠️ Aerator will restrict flow to **{aerator_flow_rate} LPM** (your calculated flow is {flow_LPM:.2f} LPM), with wetted area ~4806mm2 ")
 
         def get_temp_color(temp):
             T = np.clip(temp, 0, 100)
@@ -379,7 +443,7 @@ elif st.session_state.page == 'faucet':
         st.caption("Created by Vigyan Lal💧")
 
     elif model_choice == "35mm":
-        st.title("🚰 Faucet Modelling - 35mm")
+        st.title("🚰35mm")
         st.markdown("---")
 
         col1, col2 = st.columns(2)
@@ -430,6 +494,30 @@ elif st.session_state.page == 'faucet':
         col3, col4 = st.columns(2)
         col3.metric("🌡️ Outlet Temp", f"{T_mixed:.1f} °C")
         col4.metric("🚿 Flow Rate", f"{flow_LPM:.2f} LPM")
+
+        st.markdown("### 💦 Select Aerator Type")
+
+# Aerator specs (mid-range flow at 3 bar)
+        aerator_specs = {
+        "Aerated - Light Green (Z) - 7.5-9 LPM": {"flow": 8.25, "wetted_area": 4806},  # Mid of 7.5 and 9
+        "Aerated - Light Blue (A) - 13.5-15 LPM": {"flow": 14.25, "wetted_area": 4716},  # Mid of 13.5 and 15
+        "Aerated - Light Grey (B) - 22.8-25.2 LPM": {"flow": 24, "wetted_area": 4840},
+        "Aerated - Dark Grey (C) - 27-30 LPM": {"flow": 28.5, "wetted_area": 4823},
+        "Aerated - Blue (V) - 22.8-25.2 LPM": {"wetted_area": 4033},
+        "Aerated - Orange - 5 LPM": {"flow": 5, "wetted_area": 4596},
+        "Aerated - White - 8 LPM": {"flow": 8, "wetted_area": 4596},
+}
+        aerator_choice = st.selectbox("Choose Aerator Type", list(aerator_specs.keys()))
+        aerator_flow_rate = aerator_specs[aerator_choice]["flow"]
+        wetted_area = aerator_specs[aerator_choice]["wetted_area"]
+
+# Logic to compare calculated flow vs aerator rated flow
+        st.markdown("#### ✅ With Respect to Aerator:")
+
+        if flow_LPM <= aerator_flow_rate:
+            st.success(f"Flow will be **{flow_LPM:.2f} LPM** (within aerator limit of {aerator_flow_rate} LPM), with wetted area less than ~4806mm2")
+        else:
+            st.warning(f"⚠️ Aerator will restrict flow to **{aerator_flow_rate} LPM** (your calculated flow is {flow_LPM:.2f} LPM), with wetted area ~4806mm2 ")
 
         def get_temp_color(temp):
             T = np.clip(temp, 0, 100)
@@ -505,12 +593,12 @@ elif st.session_state.page == 'valve':
             coldT = st.number_input('Cold Temperature (T2) (°C)', value=25.0, step=1.0, key="coldT_valve")
         with col3:
             outletChoice = st.selectbox('Check Flow To:', ['Spout', 'Shower'], key="outletChoice_valve")
-            pipeLen = st.number_input('Pipe Length (m)', value=1.0, step=0.1, key="pipeLen_valve")
+            pipeLen = st.number_input('Pipe Length L in m', value=1.0, step=0.1, key="pipeLen_valve")
             pipeDia = st.number_input('Pipe Diameter (mm)', value=18.4, step=0.1, key="pipeDia_valve")
 
         st.subheader("Lever Control")
 
-        col_slider, col_gauge, col_image = st.columns([1.2, 1, 1])
+        col_slider, col_gauge, col_image, col_image2 = st.columns([1.2, 1, 1, 1])
 
         with col_slider:
             st.markdown("##### Lever Angle (°)")
@@ -543,6 +631,11 @@ elif st.session_state.page == 'valve':
         with col_image:
             st.markdown("<div style='text-align:center; padding-top: 35px;'>", unsafe_allow_html=True)
             st.image("AT360.png", width=130, caption="Valve Image")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with col_image2:        
+            st.markdown("<div style='text-align:center; padding-top: 35px;'>", unsafe_allow_html=True)
+            st.image("Valve_Shower.png", width=130, caption="Length of Pipe from Valve to Shower")
             st.markdown("</div>", unsafe_allow_html=True)
 
     # Calculation inside Valve
@@ -636,12 +729,12 @@ elif st.session_state.page == 'valve':
             coldT = st.number_input('Cold Temperature (T2) (°C)', value=25.0, step=1.0, key="coldT_valve")
         with col3:
             outletChoice = st.selectbox('Check Flow To:', ['Spout', 'Shower'], key="outletChoice_valve")
-            pipeLen = st.number_input('Pipe Length (m)', value=1.0, step=0.1, key="pipeLen_valve")
+            pipeLen = st.number_input('Pipe Length (L) in m', value=1.0, step=0.1, key="pipeLen_valve")
             pipeDia = st.number_input('Pipe Diameter (mm)', value=18.4, step=0.1, key="pipeDia_valve")
 
         st.subheader("Lever Control")
 
-        col_slider, col_gauge, col_image = st.columns([1.2, 1, 1])
+        col_slider, col_gauge, col_image, col_image2 = st.columns([1.2, 1, 1, 1])
 
         with col_slider:
             st.markdown("##### Lever Angle (°)")
@@ -675,6 +768,12 @@ elif st.session_state.page == 'valve':
             st.markdown("<div style='text-align:center; padding-top: 35px;'>", unsafe_allow_html=True)
             st.image("882IN.png", width=130, caption="Valve Image")
             st.markdown("</div>", unsafe_allow_html=True)
+
+        with col_image2:
+            st.markdown("<div style='text-align:center; padding-top: 35px;'>", unsafe_allow_html=True)
+            st.image("Valve_Shower.png", width=130, caption="Length of Pipe from Valve to Shower")
+            st.markdown("</div>", unsafe_allow_html=True)
+
 
     # Calculation inside Valve
         def calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia):
@@ -754,12 +853,89 @@ elif st.session_state.page == 'valve':
             st.metric("Mixed Water Temperature (°C)", f"{results['Mixed Water Temperature (°C)']:.1f}")
             st.metric("Final Pipe Temperature (°C)", f"{results['Final Pipe Temperature (°C)']:.1f}")
 
-    else:
-        st.info("Under Development")
+    elif model_choice == "Thermostatic":
+        st.title("🌡️ Anthem: Select no. of outlets")
 
-    if st.button("🔙 Back to Home"):
-        st.session_state.page = 'home'
-        st.rerun()
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            T_hot = st.number_input("Hot Water Temp (°C):", value=60.9, step=0.1)
+            mix_setting = 'A (Mixing)'
+            product_attached = st.toggle("Product Attached", value=True)
+
+        with col2:
+            T_cold = st.number_input("Cold Water Temp (°C):", value=20.8, step=0.1)
+            mix_ratio = st.slider("Mixing Ratio (0 = Cold, 1 = Hot):", 0.0, 1.0, 0.5, step=0.01)
+
+        with col3:
+            num_outlets = st.selectbox("No. of Outlets:", ['3','4','5','6','7'], index=3)
+            num = int(num_outlets)
+
+        outlet_types = ['Spout', 'Handshower', 'Showerhead', 'Rain Panel', 'Body Jet -1', 'Body Jet -2']
+        outlet_data = []
+
+        outlet_cols = st.columns([3, 1])
+        with outlet_cols[0]:
+            outlet_data = []
+            for i in range(num):
+                st.markdown(f"**Outlet {i+1}**")
+                col_a, col_b = st.columns([1, 2])
+                with col_a:
+                    outlet_type = st.selectbox(f"Type {i+1}", outlet_types, key=f"type_{i}")
+                with col_b:
+                    length_ft = st.slider(f"Pipe Length (ft) {i+1}", 1, 6, 2, key=f"len_{i}")
+                outlet_data.append((outlet_type, length_ft))
+
+        with outlet_cols[1]:
+            st.image("3 port.png", width=160, caption="3 Outlet Anthem")
+            st.image("4 port.png", width=160, caption="4 Outlet Anthem")
+            st.image("5 port.png", width=160, caption="5 Outlet Anthem")
+            st.image("6 port.png", width=160, caption="6 Outlet Anthem")
+
+        def get_temp_drop(outlet, len_ft, setting, is_attached):
+            if setting == "A (Mixing)":
+                if outlet == 'Handshower':
+                    deltaT = min(2, 1 * (len_ft / 2))
+                elif outlet == 'Showerhead':
+                    deltaT = np.interp(len_ft, [0, 2, 4, 6], [1, 1.2, 1.9, 3.1])
+                elif outlet == 'Rain Panel':
+                    deltaT = 0.08 * len_ft
+                elif outlet == 'Body Jet -1' or outlet == 'Body Jet -2':
+                    deltaT = 0.5 * len_ft
+                elif outlet == 'Spout':
+                    deltaT = 0.3 * len_ft
+                else:
+                    deltaT = 0.5 * len_ft
+            else:
+                if outlet == 'Handshower':
+                    deltaT = np.interp(len_ft, [0, 2, 4], [0, 2.7, 3.5])
+                elif outlet == 'Showerhead':
+                    deltaT = np.interp(len_ft, [0, 2, 4, 6], [1, 1.2, 1.9, 3.1])
+                elif outlet == 'Rain Panel':
+                    deltaT = np.interp(len_ft, [0, 2], [0, 1.3])
+                elif outlet == 'Body Jet -1' or outlet == 'Body Jet -2':
+                    deltaT = 0.6 * len_ft
+                elif outlet == 'Spout':
+                    deltaT = 0.3 * len_ft
+                else:
+                    deltaT = 0.6 * len_ft
+            return deltaT + 0.8 if is_attached else deltaT
+
+        if True:
+            mix_ratio_val = mix_ratio
+
+            T_mix = mix_ratio_val * T_hot + (1 - mix_ratio_val) * T_cold
+            st.success(f"🔁 Valve Output Temperature: **{T_mix:.2f} °C**")
+
+            cols = st.columns(num)
+            for i, (outlet, length) in enumerate(outlet_data):
+                delta_T = get_temp_drop(outlet, length, mix_setting, product_attached)
+                outlet_temp = T_mix - delta_T
+                with cols[i]:
+                    st.metric(label=f"Outlet {i+1} ({outlet})", value=f"{outlet_temp:.1f} °C")
+
+        if st.button("🔙 Back to Home"):
+            st.session_state.page = 'home'
+            st.rerun()
 
 elif st.session_state.page == 'shower':
     st.title("🚿 Shower Performance Model")
