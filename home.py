@@ -236,7 +236,7 @@ if st.session_state.page == 'home':
         .bottom-right-logo {{
             position: fixed;
             right: 20px;
-            bottom: 20px;
+            bottom: 50px;
             z-index: 1000;
             opacity: 0.9;
             border-radius: 10px;
