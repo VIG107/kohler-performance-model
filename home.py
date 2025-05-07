@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import plotly.graph_objects as go
-import streamlit as st
 import time
 import base64
 
@@ -17,52 +16,57 @@ def load_base64(path):
 
 gif_b64 = load_base64("kohler_loading.gif")
 mp3_b64 = load_base64("netflix_intro.mp3")
+logo_b64 = load_base64("logo.png")
+
+# 🌐 Add global styling
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+
+    html, body, [class*="css"]  {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .center-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+    }
+
+    .stButton > button {
+        background-color: #0078D4;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        padding: 0.8em 2.5em;
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.25);
+        transition: all 0.3s ease;
+    }
+
+    .stButton > button:hover {
+        background-color: #005fa3;
+        transform: scale(1.05);
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # Session state
 if "start" not in st.session_state:
     st.session_state.start = False
 
 if not st.session_state.start:
-    st.markdown("""
-        <style>
-        .center-container {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 9999;
-        }
-
-        .stButton > button {
-            background-color: #0078D4;
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            padding: 0.8em 2.5em;
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.25);
-            transition: all 0.3s ease;
-        }
-
-        .stButton > button:hover {
-            background-color: #005fa3;
-            transform: scale(1.05);
-        }
-        </style>
-
-        <div class="center-container">
-    """, unsafe_allow_html=True)
-
+    st.markdown("<div class='center-container'>", unsafe_allow_html=True)
     if st.button("Click to Start"):
         st.session_state.start = True
         st.rerun()
-
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-    
-# Splash + Sound
+# Splash screen with audio
 st.markdown(f"""
     <style>
     #splash {{
@@ -105,7 +109,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Wait and continue
 time.sleep(3.5)
 
 # --- Sidebar Navigation or Button Logic ---
@@ -114,71 +117,133 @@ if 'page' not in st.session_state:
 
 # --- HOME PAGE ---
 if st.session_state.page == 'home':
-    st.markdown("""
-        <style>
-        div.stButton > button {
-            background-color: #d1f3f9;
-            color: #0077b6;
-            border: 1px solid #90e0ef;
-            padding: 0.6em 1em;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-        div.stButton > button:hover {
-            background-color: #b2ebf2;
-            color: #000000;
-            transform: scale(1.03);
-        }
-        </style>
+    if st.session_state.page == 'home':
+        st.markdown("""
+    <style>
+    body {
+        background: linear-gradient(to bottom, #ffffff, #f0fbff);
+    }
+
+    .home-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        margin-top: 0.5rem;
+    }
+
+    .home-title h1 {
+        background: -webkit-linear-gradient(45deg, #0077b6, #00b4d8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 2.6em;
+        margin: 0;
+    }
+
+    .home-title .icon {
+        font-size: 2.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .subtext-box {
+        background-color: #f0faff;
+        padding: 0.7em 1.3em;
+        border-radius: 12px;
+        border: 1px solid #d8f1fc;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        margin: 15px auto 25px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 500;
+        color: #023e8a;
+        max-width: 700px;
+    }
+
+    div.stButton > button {
+        background-color: #0077b6;
+        color: white;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 0.9em 1.2em;
+        border-radius: 12px;
+        width: 100%;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+    }
+
+    div.stButton > button:hover {
+        background-color: #005f87;
+        transform: translateY(-2px);
+    }
+
+    .caption-footer {
+        text-align: center;
+        font-size: 13px;
+        margin-top: 30px;
+        color: #666;
+    }
+
+    </style>
     """, unsafe_allow_html=True)
 
-    st.title("💧 Kohler Performance Model 💧")
-    st.subheader("This is a Perfomace Prediction Model that gives the Outlet Parameters.")
-    st.markdown("---")
-    st.write("### Select a Model to Continue:")
+    st.markdown("""
+    <div class="home-title">
+        <div class="icon">💧</div>
+        <h1>Kohler Performance Model</h1>
+        <div class="icon">💧</div>
+    </div>
+    <div class="subtext-box">
+        This is a Perfomace Prediction Model that gives the Outlet Parameters.
+    </div>
+    """, unsafe_allow_html=True)
 
+    st.write("### Select a Model to Continue:")
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         if st.button("🚿 Shower Model"):
-            st.session_state.page = "shower" 
+            st.session_state.page = "shower"
             st.rerun()
-
     with col2:
         if st.button("🔧 Valve Model"):
             st.session_state.page = "valve"
             st.rerun()
-
     with col3:
         if st.button("🚰 Faucet Model"):
             st.session_state.page = "faucet"
             st.rerun()
-
     with col4:
-        if st.button("📉PRV Placement"):
+        if st.button("📉 PRV Placement"):
             st.session_state.page = "prv"
-            st.rerun()        
+            st.rerun()
 
-    st.markdown("---")
-    st.caption("Made by Vigyan Lal")
+    st.markdown("""
+        <div class="caption-footer">
+            Made by <strong>Vigyan Lal</strong><br>
+            KOCF372<br>
+            Graduate Engineer Trainee – Faucets and Showering Engineering
+        </div>
+    """, unsafe_allow_html=True)
 
     st.markdown(f"""
-    <style>
-    .bottom-right-logo {{
-        position: fixed;
-        right: 20px;
-        bottom: 20px;
-        z-index: 1000;
-        opacity: 0.9;
-    }}
-    </style>
-    <div class="bottom-right-logo">
-        <img src="app/static/logo.png" width="90">
-    </div>
-""", unsafe_allow_html=True)
+        <style>
+        .bottom-right-logo {{
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1000;
+            opacity: 0.9;
+            border-radius: 10px;
+        }}
+        </style>
+        <div class="bottom-right-logo">
+            <img src="data:image/png;base64,{logo_b64}" width="120">
+        </div>
+    """, unsafe_allow_html=True)
 
+        
 # === FAUCET MODEL PAGE ===
 elif st.session_state.page == 'faucet':
     st.title("🚰 Faucet Modelling")
@@ -716,6 +781,8 @@ elif st.session_state.page == 'valve':
             st.metric("Mixed Water Temperature (°C)", f"{results['Mixed Water Temperature (°C)']:.1f}")
             st.metric("Final Pipe Temperature (°C)", f"{results['Final Pipe Temperature (°C)']:.1f}")
 
+
+
     elif model_choice == "AT235":
         st.title("🚰 AQUA TURBO 235")
         st.subheader("Inlet Conditions & Outlet Selection")
@@ -773,7 +840,6 @@ elif st.session_state.page == 'valve':
             st.markdown("<div style='text-align:center; padding-top: 35px;'>", unsafe_allow_html=True)
             st.image("Valve_Shower.png", width=130, caption="Length of Pipe from Valve to Shower")
             st.markdown("</div>", unsafe_allow_html=True)
-
 
     # Calculation inside Valve
         def calculate_valve(hotP, coldP, hotT, coldT, theta, outletChoice, pipeLen, pipeDia):
@@ -852,6 +918,10 @@ elif st.session_state.page == 'valve':
         with col3:
             st.metric("Mixed Water Temperature (°C)", f"{results['Mixed Water Temperature (°C)']:.1f}")
             st.metric("Final Pipe Temperature (°C)", f"{results['Final Pipe Temperature (°C)']:.1f}")
+
+        # if st.button("🔙 Back to Home"):
+        #     st.session_state.page = 'home'
+        #     st.rerun()
 
     elif model_choice == "Thermostatic":
         st.title("🌡️ Anthem: Select no. of outlets")
@@ -933,9 +1003,9 @@ elif st.session_state.page == 'valve':
                 with cols[i]:
                     st.metric(label=f"Outlet {i+1} ({outlet})", value=f"{outlet_temp:.1f} °C")
 
-        if st.button("🔙 Back to Home"):
-            st.session_state.page = 'home'
-            st.rerun()
+    if st.button("🔙 Back to Home", key = "back_home_thermo"):
+        st.session_state.page = 'home'
+        st.rerun()
 
 elif st.session_state.page == 'shower':
     st.title("🚿 Shower Performance Model")
@@ -988,7 +1058,7 @@ elif st.session_state.page == 'shower':
 
         st.success(f"🌡️ Final Outlet Temperature: **{T_final:.2f} °C**")
 
-    if st.button("🔙 Back to Home"):
+    if st.button("🔙 Back to Home", key = "back_home_shower"):
         st.session_state.page = 'home'
         st.rerun()
 
@@ -997,23 +1067,28 @@ elif st.session_state.page == 'prv':
 
     with st.form("prv_form"):
         st.subheader("Enter Pipeline Parameters")
-        col1, col2 = st.columns(2)
 
-        with col1:
-            total_length = st.number_input("Total Pipeline Length (m)", min_value=0.0, value=0.0, step=0.1)
-            target_pressure_bar = st.number_input("Target Outlet Pressure (bar)", min_value=0.0, value=0.0, step=0.1)
+        # Layout: Inputs on left, image on right
+        col_form, col_img = st.columns([2, 1.2])
+        with col_form:
+            col1, col2 = st.columns(2)
+            with col1:
+                total_length = st.number_input("Total Pipeline Length (m)", min_value=0.0, value=0.0, step=0.1)
+                target_pressure_bar = st.number_input("Target Outlet Pressure (bar)", min_value=0.0, value=0.0, step=0.1)
+            with col2:
+                elevation_drop = st.number_input("Total Elevation Drop (m)", min_value=0.0, value=0.0, step=0.1)
+                pipe_dia_mm = st.number_input("Pipe Inner Diameter (mm)", min_value=0.0, value=0.0, step=0.1)
 
-        with col2:
-            elevation_drop = st.number_input("Total Elevation Drop (m)", min_value=0.0, value=0.0, step=0.1)
-            pipe_dia_mm = st.number_input("Pipe Inner Diameter (mm)", min_value=0.0, value=0.0, step=0.1)
+            col_calc, col_reset = st.columns([1, 1])
+            with col_calc:
+                submitted = st.form_submit_button("Calculate PRV Location")
+            with col_reset:
+                reset = st.form_submit_button("Reset")
 
-        # Buttons inside form
-        col_calc, col_reset = st.columns([1, 1])
-        with col_calc:
-            submitted = st.form_submit_button("Calculate PRV Location")
-        with col_reset:
-            reset = st.form_submit_button("Reset")
+        with col_img:
+            st.image("PRV_Location.jpg", caption="📈 PRV Placement Thoery", use_container_width=True)
 
+    # After form is submitted
     if submitted:
         if total_length == 0 or elevation_drop == 0 or target_pressure_bar == 0:
             st.error("Please fill all fields with non-zero values.")
@@ -1036,6 +1111,6 @@ elif st.session_state.page == 'prv':
         st.experimental_rerun()
 
     st.markdown("---")
-    if st.button("🔙 Back to Home"):
+    if st.button("🔙 Back to Home", key="back_home_prv"):
         st.session_state.page = 'home'
         st.rerun()
