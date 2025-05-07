@@ -195,7 +195,10 @@ if st.session_state.page == 'home':
         <div class="icon">💧</div>
     </div>
     <div class="subtext-box">
-        This is a Perfomace Prediction Model that gives the Outlet Parameters.
+        Welcome to the Performance Prediction Model.<br>
+        This tool accurately computes outlet parameters based on your selected inlet conditions, you can choose from the available models to simulate system behavior accordingly.<br>
+        All models have been rigorously tested and validated on the KIC test bench.<br>
+        If you have any feedback or suggestions, please feel free to reach out. Thank you!
     </div>
     """, unsafe_allow_html=True)
 
