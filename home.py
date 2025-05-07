@@ -196,10 +196,12 @@ if st.session_state.page == 'home':
     </div>
     <div class="subtext-box">
         <strong>Welcome to the Performance Prediction Model.</strong><br>
-        This tool accurately computes Outlet Parameters based on your selected Inlet conditions, you can choose from the available models to simulate system behavior accordingly.<br>
+        <span style="font-size:17px;">
+                This tool accurately computes Outlet Parameters based on your selected Inlet conditions, you can choose from the available models to simulate system behavior accordingly.
+                </span><br><br>
         All models have been rigorously tested and validated on the KIC Test Bench.<br>
         If you have any feedback or suggestions, please feel free to reach out.<br>
-        Thank you!
+        <b>Thank you!</b>
     </div>
     """, unsafe_allow_html=True)
 
@@ -255,7 +257,7 @@ elif st.session_state.page == 'faucet':
     model_choice = st.selectbox("Choose Cartridge Size:", ["26mm", "28mm", "35mm"], index=0)
 
     if model_choice == "26mm":
-        st.title("🚰 26mm")
+        st.subheader("🚰 26mm")
         # Inputs
         col1, col2 = st.columns(2)
         with col1:
@@ -384,7 +386,7 @@ elif st.session_state.page == 'faucet':
         st.markdown("---")
 
     elif model_choice == "28mm":
-        st.title("🚰 28mm")
+        st.subheader("🚰 28mm")
         st.markdown("---")
 
         col1, col2 = st.columns(2)
@@ -512,7 +514,7 @@ elif st.session_state.page == 'faucet':
         st.caption("Created by Vigyan Lal💧")
 
     elif model_choice == "35mm":
-        st.title("🚰35mm")
+        st.subheader("🚰35mm")
         st.markdown("---")
 
         col1, col2 = st.columns(2)
@@ -650,8 +652,8 @@ elif st.session_state.page == 'valve':
     model_choice = st.selectbox("Choose Valve:", ["AT235", "AT360", "Thermostatic"], index=0)
 
     if model_choice == "AT360":
-        st.title("🚰 AQUA TURBO 360")
-        st.subheader("Inlet Conditions & Outlet Selection")
+        st.subheader("🚰 AQUA TURBO 360")
+        st.markdown('<span style="font-size:18px;"><b>Inlet Conditions & Outlet Selection</b></span>', unsafe_allow_html=True)
         with st.container():
             col1, col2, col3 = st.columns(3)
         with col1:
@@ -788,8 +790,8 @@ elif st.session_state.page == 'valve':
 
 
     elif model_choice == "AT235":
-        st.title("🚰 AQUA TURBO 235")
-        st.subheader("Inlet Conditions & Outlet Selection")
+        st.subheader("🚰 AQUA TURBO 235")
+        st.markdown('<span style="font-size:18px;"><b>Inlet Conditions & Outlet Selection</b></span>', unsafe_allow_html=True)
         with st.container():
             col1, col2, col3 = st.columns(3)
         with col1:
@@ -928,7 +930,7 @@ elif st.session_state.page == 'valve':
         #     st.rerun()
 
     elif model_choice == "Thermostatic":
-        st.title("🌡️ Anthem: Select no. of outlets")
+        st.subheader("🌡️ Anthem: Select no. of outlets")
 
         col1, col2, col3 = st.columns(3)
         with col1:
