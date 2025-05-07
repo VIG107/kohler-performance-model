@@ -195,10 +195,11 @@ if st.session_state.page == 'home':
         <div class="icon">💧</div>
     </div>
     <div class="subtext-box">
-        Welcome to the Performance Prediction Model.<br>
-        This tool accurately computes outlet parameters based on your selected inlet conditions, you can choose from the available models to simulate system behavior accordingly.<br>
-        All models have been rigorously tested and validated on the KIC test bench.<br>
-        If you have any feedback or suggestions, please feel free to reach out. Thank you!
+        <strong>Welcome to the Performance Prediction Model.</strong><br>
+        This tool accurately computes Outlet Parameters based on your selected Inlet conditions, you can choose from the available models to simulate system behavior accordingly.<br>
+        All models have been rigorously tested and validated on the KIC Test Bench.<br>
+        If you have any feedback or suggestions, please feel free to reach out.<br>
+        Thank you!
     </div>
     """, unsafe_allow_html=True)
 
@@ -242,7 +243,7 @@ if st.session_state.page == 'home':
         }}
         </style>
         <div class="bottom-right-logo">
-            <img src="data:image/png;base64,{logo_b64}" width="120">
+            <img src="data:image/png;base64,{logo_b64}" width="180">
         </div>
     """, unsafe_allow_html=True)
 
